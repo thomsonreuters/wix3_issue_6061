@@ -1,0 +1,29 @@
+import "oaidl.idl";
+import "ocidl.idl";
+
+[
+    uuid(4a71510a-db14-49c1-98ff-26f5b8c26de6),
+    version(1.0)
+]
+dispinterface IDispCalculatorComponent
+{
+    properties:
+    methods:
+        [id(1)] HRESULT Add([in] int a,[in] int b,[out, retval] int* value);
+};
+
+[
+    uuid(8279f993-c7b6-4d60-b8b2-0b4c86523d85),
+    version(1.0)
+]
+library DispatchCalculatorComponentLib
+{
+    [
+        uuid(d0213abd-5928-481e-af3e-51b860af47d2),
+        version(1.0)
+    ]
+    coclass DispatchCalculatorComponent
+    {
+        [default] dispinterface IDispCalculatorComponent;
+    };
+}

@@ -1,0 +1,177 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Wix
+	xmlns="http://schemas.microsoft.com/wix/2006/wi"
+	xmlns:comPlus="http://schemas.microsoft.com/wix/ComPlusExtension"
+	xmlns:util="http://schemas.microsoft.com/wix/UtilExtension"
+	>
+	<!--
+		Prerequisites:
+		(1) Build the solution for Release / x86
+		Usage:
+		(0) Set path to resolve candle.exe and light.exe
+		(1) Change to the folder containing this file
+		(2) invoke:
+			candle -ext WixComPlusExtension -ext WixUtilExtension .\Imported.wxs
+		(3) invoke:
+			light -ext WixComPlusExtension -ext WixUtilExtension .\Imported.wixobj
+	-->
+	<Product
+		Name="SimpleComPlusCalculator"
+		Manufacturer="Thomson Reuters"
+		Id="C23E8496-B9C6-4657-AA47-F24FCCB0C42D"
+		UpgradeCode="3EE1846E-60DB-4399-A4A5-CD4ADABCF5B9"
+		Language="1033"
+		Codepage="1252"
+		Version="1.0.0"
+		>
+
+		<Package
+			Id="*"
+			Keywords="Installer"
+			Description="COM+ Calculator"
+			Comments="Experimental"
+			Manufacturer="ThomsonReuters"
+			InstallerVersion="500"
+			Languages="1033"
+			Compressed="yes"
+			SummaryCodepage="1252"
+		/>
+
+		<Media
+			Id="1"
+			Cabinet="SimpleComPlusCalculator.cab"
+			EmbedCab="yes"
+			DiskPrompt="What Disk?"
+		/>
+		<Property
+			Id="DiskPrompt"
+			Value="Demo Install [1]"
+		/>
+
+		<!--
+			While using a Binary does leave the tables as I would expect them,
+			the result of evaluation at runtime is not the desired outcome,
+			but rather the empty string.
+		-->
+		<!--
+		<Binary
+			Id="tlb"
+			SourceFile="Release\SimpleComServer.tlb"
+		/>
+		-->
+
+		<Directory
+			Id="TARGETDIR"
+			Name="SourceDir"
+		>
+
+			<Directory Id="ProgramFilesFolder" Name="PFiles" >
+				<Directory Id="CreativeSol" Name="Creative Solutions" >
+					<Directory Id="INSTALLDIR" Name="Calculator Experiment" >
+
+						<Component Guid="*" Id="ClientExecutable" >
+							<File
+								Id="ClientExe"
+								Name="SimpleComConsumer.exe"
+								Source="SimpleComConsumer\bin\Release\SimpleComConsumer.exe"
+								KeyPath="yes"
+							/>
+						</Component>
+
+						<!--
+							Interop.SimpleComServer.dll not needed because Embed Interop Types=True
+							versus =False in production software.
+						-->
+
+						<Component Guid="*" Id="NativeDll" >
+							<File
+								Id="ndf"
+								Name="SimpleComServer.dll"
+								Source="Release\SimpleComServer.dll"
+								KeyPath="yes"
+							>
+								<!--
+									Experimentation revealed that when using ComPlus to
+									install with the TypeLib, an error:
+									HRESULT COMADMIN_E_ALREADYINSTALLED
+									is emitted from the call to
+									ICOMAdminCatalog::InstallComponent()
+								-->
+								<Class Id="D0213ABD-5928-481E-AF3E-51B860AF47D2" >
+									<!-- No ProgId -->
+									<Interface
+										Id="4A71510A-DB14-49C1-98FF-26F5B8C26DE6"
+										Name="IDispCalculatorComponent"
+										ProxyStubClassId32="00020420-0000-0000-C000-000000000046"
+									/>
+								</Class>
+							</File>
+
+							<comPlus:ComPlusApplication
+								Id="CalculatorComPlus"
+								Name="Com Plus Calculator"
+							>
+								<comPlus:ComPlusApplicationRole
+									Id="CreaterOwnerRole"
+									Name="CreatorOwner"
+								>
+									<comPlus:ComPlusGroupInApplicationRole
+										Id="AuthUsersValid"
+										Group="AuthUsersGroup"
+									/>
+								</comPlus:ComPlusApplicationRole>
+								<!--
+								<comPlus:ComPlusAssembly
+									Id="CalculatorAssembly"
+									DllPath="[#ndf]"
+									TlbPath="[#tlb]"
+									Type="native"
+								>
+									<comPlus:ComPlusComponent
+										Id="CalculatorComPlusComponent"
+										CLSID="D0213ABD-5928-481E-AF3E-51B860AF47D2"
+									/>
+								</comPlus:ComPlusAssembly>
+								-->
+								<comPlus:ComPlusImportedComponent
+									Id="CalculatorImportedComponent"
+									CLSID="D0213ABD-5928-481E-AF3E-51B860AF47D2"
+									RegisterInCommit="yes"
+								/>
+							</comPlus:ComPlusApplication>
+						</Component>
+
+						<!--
+						<Component Guid="*" Id="NativeTypeLib">
+							<File
+								Id="tlb"
+								Name="SimpleComServer.tlb"
+								Source="Release\SimpleComServer.tlb"
+								KeyPath="yes"
+							/>
+						</Component>
+						-->
+					</Directory>
+				</Directory>
+			</Directory>
+		</Directory>
+
+		<Feature Id="Complete" Level="1" >
+			<ComponentRef Id="ClientExecutable" />
+			<ComponentRef Id="NativeDll" />
+			<!--
+			<ComponentRef Id="NativeTypeLib" />
+			-->
+		</Feature>
+
+		<!--
+		Using the domain per the 2009-02-11 answer to
+		https://www.trycatchfail.com/2008/07/28/wix-permissionex-problem-solved/
+		-->
+		<util:Group
+			Id="AuthUsersGroup"
+			Name="Authenticated Users"
+			Domain="NT AUTHORITY"
+		/>
+	</Product>
+</Wix>
